@@ -29,8 +29,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # TO DO CHANGE ME TO self.setWindowTitle("Photonics Lab Image Processor")
-        self.setWindowTitle("LanaDelRey the game")
+        self.setWindowTitle("Photonics Lab Image Processor")
         self.resize(1000, 600)
 
         self.selected_images: List[Path] = []

@@ -24,7 +24,3 @@ install.bat
 - sprawdz TO DO wszedzie
 - w .gitignore zamieścić logs/, results/, .venv/
 - dobrze sie bawic ;33
-
-- kupic bilety na pokaz 2
-- case do HR wrzucic 
-- tutorial na yt z czegos tam
