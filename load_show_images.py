@@ -1,6 +1,41 @@
 import cv2 as cv
 import os
 
+import numpy as np
+
+import re
+
+
+def extract_physical_values(filename):
+    name = os.path.splitext(filename)[0]
+
+    current_patterns = [
+        r'(\d+(?:\.\d+)?)[ ]?A',         # e.g. 1.50A
+        r'prad-(\d+(?:\.\d+)?)[ ]?mA',   # e.g. prad-1mA
+        r'(\d+(?:\.\d+)?)[ ]?mA',        # e.g. 1mA
+    ]
+
+    voltage_patterns = [
+        r'(\d+(?:\.\d+)?)[ ]?V',         # e.g. 2.77V
+    ]
+
+    current = None
+    voltage = None
+
+    for pat in current_patterns:
+        match = re.search(pat, name)
+        if match:
+            current = match.group(1)
+            break
+
+    for pat in voltage_patterns:
+        match = re.search(pat, name)
+        if match:
+            voltage = match.group(1)
+            break
+
+    return np.array([current, voltage])
+
 def load_images(folder_path):
     supported_formats = ('.jpg', '.jpeg', '.png', '.tiff', '.bmp')
     images_dict = {}
@@ -11,7 +46,11 @@ def load_images(folder_path):
                 filepath = os.path.join(root, file) #łączymy ścieżki
                 img = cv.imread(filepath) #wczytujemy obraz
                 relative_path = os.path.relpath(filepath, folder_path)
-                images_dict[relative_path] = img #[key] = value
+                current_voltages = extract_physical_values(file)
+                images_dict[relative_path] = {
+                    'image': img,
+                    'current_voltage': current_voltages
+                }
 
     print(f"Total images loaded: {len(images_dict)}")
     return images_dict
@@ -30,6 +69,7 @@ images_dict = load_images(folder_path)
 images_copy = images_dict.copy()
 
 choosen_key = list(images_dict.keys())[1]  #.keys() - zwraca wszystkie klucze (relative path)
-img = images_dict[choosen_key] #nazwa obrazu
+img = images_dict[choosen_key]['image'] #nazwa obrazu
 
-show_image(img, choosen_key) 
+show_image(img, choosen_key)
+print("Current and Voltage:", images_dict[choosen_key]['current_voltage'])
