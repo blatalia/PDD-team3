@@ -12,31 +12,32 @@ def extract_physical_values(filename):
     name = os.path.splitext(filename)[0]
 
     current_patterns = [
-        r'(\d+(?:\.\d+)?)[ ]?A',         # e.g. 1.50A
-        r'prad-(\d+(?:\.\d+)?)[ ]?mA',   # e.g. prad-1mA
-        r'(\d+(?:\.\d+)?)[ ]?mA',        # e.g. 1mA
+        r'(\d+(?:\.\d+)?)[ ]?(A|mA)',         # e.g. 1.50A, 1mA
+        r'prad-(\d+(?:\.\d+)?)[ ]?(mA)',      # e.g. prad-1mA
     ]
-
     voltage_patterns = [
-        r'(\d+(?:\.\d+)?)[ ]?V',         # e.g. 2.77V
+        r'(\d+(?:\.\d+)?)[ ]?(V)',            # e.g. 2.77V
     ]
 
-    current = None
-    voltage = None
+    current = (None, None)
+    voltage = (None, None)
 
     for pat in current_patterns:
         match = re.search(pat, name)
         if match:
-            current = match.group(1)
+            if len(match.groups()) >= 2:
+                current = (match.group(1), match.group(2))
             break
 
     for pat in voltage_patterns:
         match = re.search(pat, name)
         if match:
-            voltage = match.group(1)
+            if len(match.groups()) >= 2:
+                voltage = (match.group(1), match.group(2))
             break
 
-    return np.array([current, voltage])
+    return current, voltage
+
 
 def load_images(folder_path):
     supported_formats = ('.jpg', '.jpeg', '.png', '.tiff', '.bmp')
@@ -48,10 +49,11 @@ def load_images(folder_path):
                 filepath = os.path.join(root, file) #łączymy ścieżki
                 img = cv.imread(filepath) #wczytujemy obraz
                 relative_path = os.path.relpath(filepath, folder_path)
-                current_voltages = extract_physical_values(file)
+                current, voltage = extract_physical_values(file)
                 images_dict[relative_path] = {
                     'image': img,
-                    'current_voltage': current_voltages
+                    'current': current,
+                    'voltage': voltage
                 }
 
     print(f"Total images loaded: {len(images_dict)}")
@@ -74,7 +76,9 @@ choosen_key = list(images_dict.keys())[1]  #.keys() - zwraca wszystkie klucze (r
 img = images_dict[choosen_key]['image'] #nazwa obrazu
 
 show_image(img, choosen_key)
-print("Current and Voltage:", images_dict[choosen_key]['current_voltage'])
+
+print(f"Current (value and unit): {images_dict[choosen_key]['current']}")
+print(f"Voltage (value and unit): {images_dict[choosen_key]['voltage']}")
 
 img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
