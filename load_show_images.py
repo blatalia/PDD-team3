@@ -1,6 +1,8 @@
 import cv2 as cv
 import os
 
+from intensity import compute_intensity
+
 import numpy as np
 
 import re
@@ -73,3 +75,11 @@ img = images_dict[choosen_key]['image'] #nazwa obrazu
 
 show_image(img, choosen_key)
 print("Current and Voltage:", images_dict[choosen_key]['current_voltage'])
+
+img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+N, D, PR = compute_intensity(img)
+
+print("Nominator:", N)
+print("Denominator:", D)
+print("PR:", PR)

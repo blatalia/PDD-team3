@@ -26,9 +26,8 @@ def compute_intensity(array):
 img = Image.open("Images/Laser photos/Far field/Dallas_1_x56_y32_T15C_800mA.JPG")
 grey_scale = img.convert("L")
 array_grey = np.array(grey_scale)
-
-N, D, PR = compute_intensity(array_grey)
-
-print("Nominator:", N)
-print("Denominator:", D)
-print("PR:", PR)
+# N, D, PR = compute_intensity(array_grey)
+#
+# print("Nominator:", N)
+# print("Denominator:", D)
+# print("PR:", PR)
