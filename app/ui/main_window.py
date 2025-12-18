@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import List, Optional
 import logging
+from app.ui.image_viewer import ImageViewer
 
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -73,16 +74,16 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.btn_run)
         left_layout.addWidget(self.label_status)
 
-        self.image_label = QLabel("Preview:")
-        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_label.setMinimumSize(300, 300)
+        self.image_viewer = ImageViewer()
+        self.image_viewer.setMinimumSize(300, 300)
 
         self.text_result = QTextEdit()
         self.text_result.setReadOnly(True)
-        self.text_result.setPlaceholderText("Results:")
+        self.text_result.setPlaceholderText("Results")
 
-        right_layout.addWidget(self.image_label, 2)
+        right_layout.addWidget(self.image_viewer, 2)
         right_layout.addWidget(self.text_result, 1)
+
 
         main_layout.addLayout(left_layout, 1)
         main_layout.addLayout(right_layout, 2)
@@ -123,7 +124,7 @@ class MainWindow(QMainWindow):
         dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
         dialog.setNameFilters(
             [
-                "Pictures (*.png *.jpg *.jpeg *.tif *.tiff *.bmp)",
+                "Pictures (*.png *.jpg *.jpeg *.tif *.tiff *.bmp *.JPG)",
                 "All files (*.*)",
             ]
         )
@@ -139,13 +140,17 @@ class MainWindow(QMainWindow):
                 item.setData(Qt.ItemDataRole.UserRole, str(p))
                 self.list_files.addItem(item)
 
-            logging.getLogger(__name__).info(
-                "Number of files %d", len(self.selected_images)
-            )
+            # connect ONCE (not once per item)
+            try:
+                self.list_files.itemClicked.disconnect(self.on_file_clicked)
+            except TypeError:
+                pass
+            self.list_files.itemClicked.connect(self.on_file_clicked)
+
+            logging.getLogger(__name__).info("Number of files %d", len(self.selected_images))
             self.btn_run.setEnabled(bool(self.selected_images))
-            self.label_status.setText(
-                f"Number of files {len(self.selected_images)}"
-            )
+            self.label_status.setText(f"Number of files {len(self.selected_images)}")
+
 
     def on_run_algorithm(self):
         if not self.selected_images:
@@ -179,12 +184,16 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+        # added
+        self.worker.progress.connect(self.on_progress)
+        self.worker.log.connect(self.on_worker_log)  # optional
+
 
         self.thread.start()
 
     def on_algorithm_finished(self, result: str):
         logging.getLogger(__name__).info("Algorytm finished (OK)")
-        self.label_status.setText("Status: finished")
+        self.label_status.setText("Status: zakończono")
         self.text_result.setPlainText(result)
         self.btn_run.setEnabled(True)
 
@@ -193,19 +202,13 @@ class MainWindow(QMainWindow):
             result_path = Path("results") / first_src.name
 
             if result_path.exists():
-                pixmap = QPixmap(str(result_path))
-                if not pixmap.isNull():
-                    pixmap = pixmap.scaled(
-                        self.image_label.width(),
-                        self.image_label.height(),
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                    self.image_label.setPixmap(pixmap)
-                else:
-                    self.image_label.setText("Preview: failed to load image")
+                self.image_viewer.set_image(result_path)
+                self.label_status.setText(
+                    f"Status: previewing processed {first_src.name}"
+                )
             else:
-                self.image_label.setText("Preview: result image not found")
+                self.label_status.setText("Status: processed image not found")
+
 
 
     def on_algorithm_error(self, msg: str):
@@ -213,3 +216,21 @@ class MainWindow(QMainWindow):
         self.label_status.setText("Status: Error")
         QMessageBox.critical(self, "Error", msg)
         self.btn_run.setEnabled(True)
+
+    def on_file_clicked(self, item: QListWidgetItem):
+        from PyQt6.QtCore import Qt
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if not data:
+            return
+        path = Path(data)
+        if path.exists():
+            self.image_viewer.set_image(path)
+            self.label_status.setText(f"Status: previewing {path.name}")
+
+
+    def on_progress(self, done: int, total: int):
+        self.label_status.setText(f"Status: running... {done}/{total}")
+
+    def on_worker_log(self, msg: str):
+        # optional: append log lines
+        self.text_result.append(msg)

@@ -6,7 +6,7 @@ Jeśli chcecie jakieś zmiany porobić/potestować/pobawić się to z tego branc
 
 
 # HOW TO INSTALL
-### linux (Debian based distros)
+### linux (Debian based distros, ale w sumie inne tez moze??)
 git clone <url>
 cd PDD-team3
 chmod +x install.sh
