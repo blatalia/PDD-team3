@@ -23,7 +23,8 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QThread
 
 from app.worker import AlgorithmWorker
-from core.algorithms import ALGO_RED, ALGO_INTENSITY
+from core.algorithms import ALGO_RED, ALGO_INTENSITY, ALGO_CONTRAST
+
 
 
 class MainWindow(QMainWindow):
@@ -57,6 +58,8 @@ class MainWindow(QMainWindow):
         self.combo_algo = QComboBox()
         self.combo_algo.addItem("Filter", userData=ALGO_RED)
         self.combo_algo.addItem("Intensity", userData=ALGO_INTENSITY)
+        self.combo_algo.addItem("Contrast metrics (single image)", userData=ALGO_CONTRAST)
+
 
         self.list_files = QListWidget()
         self.list_files.setHorizontalScrollBarPolicy(
@@ -89,6 +92,7 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(right_layout, 2)
 
         self.setCentralWidget(central)
+        self.active_image: Path | None = None
 
 
         # signals
@@ -153,20 +157,20 @@ class MainWindow(QMainWindow):
 
 
     def on_run_algorithm(self):
-        if not self.selected_images:
-            QMessageBox.warning(
-                self,
-                "No files",
-                "Choose files.",
-            )
-            return
-
         algo_code = self.combo_algo.currentData()
         self.current_algo = algo_code
+
+        if not self.selected_images:
+            QMessageBox.warning(self, "No files", "Choose files.")
+            return
+
+        # Contrast runs on ALL selected images
+        images_for_run = self.selected_images
+
         logging.getLogger(__name__).info(
             "Running process(es) '%s' for %d file(s)",
             algo_code,
-            len(self.selected_images),
+            len(images_for_run),
         )
 
         self.btn_run.setEnabled(False)
@@ -174,7 +178,7 @@ class MainWindow(QMainWindow):
         self.text_result.setPlainText("running in progress...")
 
         self.thread = QThread()
-        self.worker = AlgorithmWorker(self.selected_images, algo_code)
+        self.worker = AlgorithmWorker(images_for_run, algo_code)
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.run)
@@ -184,9 +188,13 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
-        # added
+
+        # progress/log signals (you already have these)
         self.worker.progress.connect(self.on_progress)
-        self.worker.log.connect(self.on_worker_log)  # optional
+        self.worker.log.connect(self.on_worker_log)
+
+        self.thread.start()
+
 
 
         self.thread.start()
@@ -224,8 +232,10 @@ class MainWindow(QMainWindow):
             return
         path = Path(data)
         if path.exists():
+            self.active_image = path
             self.image_viewer.set_image(path)
             self.label_status.setText(f"Status: previewing {path.name}")
+            
 
 
     def on_progress(self, done: int, total: int):
