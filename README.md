@@ -1,11 +1,11 @@
-# Lasery Image Analyzer
+# Lasers Image Analyzer
 
 ### HOW TO USE APP SEE APP-INSTRUCTION
 
 
 ## Overview
 
-**Lasery Image Analyzer** is a desktop application for **laser beam image analysis**.  
+**Lasers Image Analyzer** is a desktop application for **laser beam image analysis**.  
 It provides a graphical user interface (GUI) for loading laser beam images and performing
 quantitative analysis without requiring command-line interaction during normal use.
 
@@ -41,7 +41,7 @@ You can install and run the application in two ways:
 #### 1. Clone the repository
 ```bash
 git clone <REPOSITORY_URL>
-cd lasery
+cd PDD-team3
 ```
 
 #### 2. Run the installer
@@ -65,7 +65,7 @@ After installation, the application can be launched by clicking the desktop icon
 #### 1. Clone the repository
 ```powershell
 git clone <REPOSITORY_URL>
-cd lasery
+cd PDD-team3
 ```
 
 #### 2. Run the installer
@@ -113,7 +113,7 @@ This mode is recommended for development and debugging.
 ## Project Structure
 
 ```
-lasery/
+PDD-team3/
 ├── app/            # GUI application
 ├── core/           # image processing and analysis logic
 ├── scripts/        # installer and launcher scripts
