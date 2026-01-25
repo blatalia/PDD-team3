@@ -34,6 +34,8 @@ from core.profiles import LineSection, extract_line_profile
 from core.export.csv_exporter import export_results_csv
 from core.export.pdf_report import export_pdf_report
 from datetime import datetime
+from core.analysis.contrast_definitions import DEFINITIONS_TEXT
+from app.ui.contrast_defs_dialog import ContrastDefinitionsDialog
 
 
 class MainWindow(QMainWindow):
@@ -85,6 +87,10 @@ class MainWindow(QMainWindow):
         self.combo_tool.addItem("Tool: Circle ROI", userData="circle")
         self.combo_tool.addItem("Tool: Polygon ROI", userData="polygon")
         self.combo_tool.addItem("Tool: Cross-section", userData="cross")
+
+        self.btn_contrast_defs = QPushButton("Contrast definitions")
+        self.btn_contrast_defs.setEnabled(True)
+
 
         self.btn_clear_roi = QPushButton("Clear ROI")
         self.btn_clear_roi.setEnabled(False)
@@ -174,6 +180,8 @@ class MainWindow(QMainWindow):
         left.addWidget(self.progress)
         left.addWidget(self.label_status)
 
+        left.addWidget(self.btn_contrast_defs)
+
         # RIGHT PANEL
         right = QVBoxLayout()
         self.image_viewer = ImageViewer()
@@ -235,6 +243,7 @@ class MainWindow(QMainWindow):
         self.btn_export_csv.clicked.connect(self.on_export_csv)
         self.btn_quicksave_plot.clicked.connect(self.on_quicksave_plot_png)
         self.btn_export_pdf.clicked.connect(self.on_export_pdf)
+        self.btn_contrast_defs.clicked.connect(self.on_show_contrast_definitions)
 
 
         # init
@@ -306,6 +315,11 @@ class MainWindow(QMainWindow):
         self.roi_payload = payload if isinstance(payload, dict) else None
         self._update_roi_label()
         self._update_buttons()
+
+    def on_show_contrast_definitions(self) -> None:
+        dlg = ContrastDefinitionsDialog(DEFINITIONS_TEXT, parent=self)
+        dlg.exec()
+
 
     def _update_roi_label(self) -> None:
         if not self.roi_payload:
