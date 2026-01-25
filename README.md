@@ -128,7 +128,8 @@ PDD-team3/
 
 
 ## Structure v2
-.
+
+```
 ├── app
 │   ├── __init__.py
 │   ├── main.py
@@ -169,7 +170,9 @@ PDD-team3/
 ├── requirements.txt
 ├── README.md
 └── venv
+```
 
+---
 
 ## Notes
 

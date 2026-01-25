@@ -1,4 +1,2 @@
-filename	color_mode	michelson	rms	hist_spread	std_mean	summary	path	params	roi
-Dallas1_x56y33_0.34A_1.89V_T30C_trybS_t1.2500s_light-4.jpg	rgb	1	16.7264	0.974878	1.71225	Michelson=1.000000, RMS=16.726370	/home/maciej/studiapodobno/lasery/pre-release/PDD-team3/test_photos/Dallas1_x56y33_0.34A_1.89V_T30C_trybS_t1.2500s_light-4.jpg	{'A_V': 1.89, 'x_y': 56.0, 'T_C': 30.0, 't_s': 1.25}	None
-Dallas1_x56y33_0.40A_1.95V_T30C_trybS_t1.2500s_light-4.jpg	rgb	1	21.5872	0.968889	1.53856	Michelson=1.000000, RMS=21.587233	/home/maciej/studiapodobno/lasery/pre-release/PDD-team3/test_photos/Dallas1_x56y33_0.40A_1.95V_T30C_trybS_t1.2500s_light-4.jpg	{'A_V': 1.95, 'x_y': 56.0, 'T_C': 30.0, 't_s': 1.25}	None
-Dallas1_x56y33_1.50A_2.77V_T30C_trybS_t1.2500s_light-4.jpg	rgb	0.994979	35.5639	0.932104	1.16747	Michelson=0.994979, RMS=35.563900	/home/maciej/studiapodobno/lasery/pre-release/PDD-team3/test_photos/Dallas1_x56y33_1.50A_2.77V_T30C_trybS_t1.2500s_light-4.jpg	{'A_V': 2.77, 'x_y': 56.0, 'T_C': 30.0, 't_s': 1.25}	None
+filename	error	path
+Dallas1_x56y33_0.70A_2.25V_T30C_trybS_t1.2500s_light-4.jpg	'N'	/home/maciej/studiapodobno/lasery/real-work/lasery/test_photos/Dallas1_x56y33_0.70A_2.25V_T30C_trybS_t1.2500s_light-4.jpg

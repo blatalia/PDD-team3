@@ -5,9 +5,13 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 
 from PyQt6.QtCore import Qt, QRect, QPoint, pyqtSignal
-from PyQt6.QtGui import QPixmap, QPainter, QPen, QPolygon
+from PyQt6.QtGui import QPixmap, QPainter, QPen, QPolygon, QColor
 from PyQt6.QtWidgets import QWidget
 
+SECTION_COLORS = [
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+]
 
 class ImageViewer(QWidget):
     """
@@ -33,9 +37,8 @@ class ImageViewer(QWidget):
         self._pixmap_scaled: Optional[QPixmap] = None
         self._target_rect: Optional[QRect] = None
 
-        self._tool: str = "none"  # none|rect|circle|polygon|cross
+        self._tool: str = "none"
 
-        # ROI drawing state
         self._drawing: bool = False
         self._start_pt: Optional[QPoint] = None
         self._current_pt: Optional[QPoint] = None
@@ -48,11 +51,9 @@ class ImageViewer(QWidget):
         self._poly_preview_pt: Optional[QPoint] = None
         self._poly_is_drawing: bool = False
 
-        # cross-sections in IMAGE coords: list of (x0,y0,x1,y1)
         self._sections_image: List[Tuple[int, int, int, int]] = []
         self._active_section_index: int = -1
 
-    # ---------- public API ----------
 
     def set_tool(self, tool: str) -> None:
         if tool not in ("none", "rect", "circle", "polygon", "cross"):
@@ -101,7 +102,6 @@ class ImageViewer(QWidget):
             return
         self._sections_image.pop(index)
 
-        # adjust active index
         if not self._sections_image:
             self._active_section_index = -1
         else:
@@ -135,7 +135,6 @@ class ImageViewer(QWidget):
         self._update_scaled_pixmap()
         self.update()
 
-    # ---------- Qt events ----------
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -149,15 +148,17 @@ class ImageViewer(QWidget):
         if self._pixmap_scaled and self._target_rect:
             painter.drawPixmap(self._target_rect, self._pixmap_scaled)
 
-        # Draw stored cross-sections (cyan), active (yellow)
         if self._sections_image:
             for idx, (x0, y0, x1, y1) in enumerate(self._sections_image):
-                if idx == self._active_section_index:
-                    pen_cs = QPen(Qt.GlobalColor.yellow)
-                    pen_cs.setWidth(3)
-                else:
-                    pen_cs = QPen(Qt.GlobalColor.cyan)
-                    pen_cs.setWidth(2)
+                color = QColor(SECTION_COLORS[idx % len(SECTION_COLORS)])
+                pen_cs = QPen(color)
+                pen_cs.setWidth(4 if idx == self._active_section_index else 2)
+                painter.setPen(pen_cs)
+
+                p0 = self._image_point_to_widget_point(x0, y0)
+                p1 = self._image_point_to_widget_point(x1, y1)
+                if p0 and p1:
+                    painter.drawLine(p0, p1)
                 painter.setPen(pen_cs)
 
                 p0 = self._image_point_to_widget_point(x0, y0)
@@ -165,14 +166,13 @@ class ImageViewer(QWidget):
                 if p0 and p1:
                     painter.drawLine(p0, p1)
 
-        # Draw active cross-section drag preview
         if self._tool == "cross" and self._drawing and self._start_pt and self._current_pt:
-            pen_cs = QPen(Qt.GlobalColor.cyan)
+            next_idx = len(self._sections_image) if self._sections_image else 0
+            pen_cs = QPen(QColor(SECTION_COLORS[next_idx % len(SECTION_COLORS)]))
             pen_cs.setWidth(2)
             painter.setPen(pen_cs)
             painter.drawLine(self._start_pt, self._current_pt)
 
-        # Draw ROI (green)
         pen = QPen(Qt.GlobalColor.green)
         pen.setWidth(2)
         painter.setPen(pen)
