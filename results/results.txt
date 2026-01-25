@@ -1,0 +1,2 @@
+filename	error	path
+Dallas1_x56y33_0.70A_2.25V_T30C_trybS_t1.2500s_light-4.jpg	'N'	/home/maciej/studiapodobno/lasery/real-work/lasery/test_photos/Dallas1_x56y33_0.70A_2.25V_T30C_trybS_t1.2500s_light-4.jpg

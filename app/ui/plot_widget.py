@@ -38,8 +38,14 @@ class PlotWidget(QWidget):
         ax = self._fig.add_subplot(111)
         ax.grid(True)
 
-        for x, y, label in profiles:
-            ax.plot(x, y, label=label)
+        for item in profiles:
+            if len(item) == 3:
+                x, y, label = item
+                color = None
+            else:
+                x, y, label, color = item
+
+            ax.plot(x, y, label=label, color=color)
 
         if len(profiles) > 1:
             ax.legend()

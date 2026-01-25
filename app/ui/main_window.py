@@ -34,6 +34,14 @@ from core.profiles import LineSection, extract_line_profile
 from core.export.csv_exporter import export_results_csv
 from core.export.pdf_report import export_pdf_report
 from datetime import datetime
+from core.analysis.contrast_definitions import DEFINITIONS_TEXT
+from app.ui.contrast_defs_dialog import ContrastDefinitionsDialog
+
+
+SECTION_COLORS = [
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+]
 
 
 class MainWindow(QMainWindow):
@@ -86,11 +94,14 @@ class MainWindow(QMainWindow):
         self.combo_tool.addItem("Tool: Polygon ROI", userData="polygon")
         self.combo_tool.addItem("Tool: Cross-section", userData="cross")
 
+        self.btn_contrast_defs = QPushButton("Contrast definitions")
+        self.btn_contrast_defs.setEnabled(True)
+
+
         self.btn_clear_roi = QPushButton("Clear ROI")
         self.btn_clear_roi.setEnabled(False)
         self.label_roi = QLabel("ROI: none")
 
-        # Cross-sections list
         self.list_sections = QListWidget()
         self.list_sections.setMinimumHeight(120)
 
@@ -103,12 +114,14 @@ class MainWindow(QMainWindow):
         self.btn_plot_profiles = QPushButton("Plot profiles (active image)")
         self.btn_plot_profiles.setEnabled(False)
 
+        self.btn_plot_profiles_all = QPushButton("Plot profiles (all selected images)")
+        self.btn_plot_profiles_all.setEnabled(False)
+
         self.btn_export_plot = QPushButton("Export plot to PNG")
         self.btn_export_plot.setEnabled(False)
 
         self.label_cs = QLabel("Cross-sections: 0 (right click removes last)")
 
-        # Trend plot controls
         self.label_trend = QLabel("Trend plot (after run):")
         self.combo_x = QComboBox()
         self.combo_x.setEnabled(False)
@@ -153,6 +166,8 @@ class MainWindow(QMainWindow):
         left.addWidget(self.btn_remove_section)
         left.addWidget(self.btn_clear_cs)
         left.addWidget(self.btn_plot_profiles)
+        #left.addWidget(self.btn_plot_profiles)
+        left.addWidget(self.btn_plot_profiles_all)
         left.addWidget(self.btn_export_plot)
         left.addWidget(self.label_cs)
 
@@ -173,6 +188,8 @@ class MainWindow(QMainWindow):
         left.addWidget(self.btn_run)
         left.addWidget(self.progress)
         left.addWidget(self.label_status)
+
+        left.addWidget(self.btn_contrast_defs)
 
         # RIGHT PANEL
         right = QVBoxLayout()
@@ -225,6 +242,7 @@ class MainWindow(QMainWindow):
         self.btn_clear_cs.clicked.connect(self.on_clear_cs)
         self.btn_plot_profiles.clicked.connect(self.on_plot_profiles)
         self.btn_export_plot.clicked.connect(self.on_export_plot_png)
+        self.btn_plot_profiles_all.clicked.connect(self.on_plot_profiles_all)
 
         self.btn_plot_trend.clicked.connect(self.on_plot_trend)
 
@@ -235,13 +253,11 @@ class MainWindow(QMainWindow):
         self.btn_export_csv.clicked.connect(self.on_export_csv)
         self.btn_quicksave_plot.clicked.connect(self.on_quicksave_plot_png)
         self.btn_export_pdf.clicked.connect(self.on_export_pdf)
+        self.btn_contrast_defs.clicked.connect(self.on_show_contrast_definitions)
 
-
-        # init
         self.on_tool_changed()
         self._update_trend_controls()
 
-    # ---------- file selection / preview ----------
 
     def on_select_files(self) -> None:
         dialog = QFileDialog(self, "Choose images to process")
@@ -292,8 +308,6 @@ class MainWindow(QMainWindow):
             self.label_status.setText(f"Preview: {p.name}")
             self._update_buttons()
 
-    # ---------- tool / ROI ----------
-
     def on_tool_changed(self) -> None:
         tool = self.combo_tool.currentData()
         self.image_viewer.set_tool(tool)
@@ -306,6 +320,11 @@ class MainWindow(QMainWindow):
         self.roi_payload = payload if isinstance(payload, dict) else None
         self._update_roi_label()
         self._update_buttons()
+
+    def on_show_contrast_definitions(self) -> None:
+        dlg = ContrastDefinitionsDialog(DEFINITIONS_TEXT, parent=self)
+        dlg.exec()
+
 
     def _update_roi_label(self) -> None:
         if not self.roi_payload:
@@ -340,8 +359,6 @@ class MainWindow(QMainWindow):
         except Exception:
             return None
         return None
-
-    # ---------- cross-sections list ----------
 
     def on_cross_sections_changed(self, payload) -> None:
         self.cross_sections_payload = payload if isinstance(payload, list) else []
@@ -394,8 +411,6 @@ class MainWindow(QMainWindow):
         self.plot_widget.clear()
         self._update_buttons()
 
-    # ---------- profiles plot ----------
-
     def on_plot_profiles(self) -> None:
         if not self.active_image or not self.cross_sections_payload:
             return
@@ -412,11 +427,73 @@ class MainWindow(QMainWindow):
                 samples=200
             )
             t, y = extract_line_profile(arr_roi, sec)
-            profiles_to_plot.append((t.tolist(), y.tolist(), f"Sec {idx}"))
+            color = SECTION_COLORS[(idx - 1) % len(SECTION_COLORS)]
+            profiles_to_plot.append((t.tolist(), y.tolist(), f"Sec {idx}", color))
 
         self.plot_widget.set_title("Intensity profiles")
         self.plot_widget.plot_profiles(profiles_to_plot)
         self.text_result.append(f"Plotted {len(profiles_to_plot)} profile(s) for {self.active_image.name}")
+        self._update_buttons()
+
+    def on_plot_profiles_all(self) -> None:
+        if not self.selected_images or not self.cross_sections_payload:
+            return
+
+        roi_obj = self._roi_obj_from_payload()
+        if self.active_section_index != -1:
+            s = self.cross_sections_payload[self.active_section_index]
+            sec = LineSection(
+                x0=float(s["x0"]), y0=float(s["y0"]),
+                x1=float(s["x1"]), y1=float(s["y1"]),
+                samples=200
+            )
+
+            profiles_to_plot = []
+            ok_count = 0
+
+            for p in self.selected_images:
+                try:
+                    arr, _ = load_image(p)
+                    arr_roi = apply_roi(arr, roi_obj)
+                    t, y = extract_line_profile(arr_roi, sec)
+                    profiles_to_plot.append((t.tolist(), y.tolist(), p.stem))
+                    ok_count += 1
+                except Exception as e:
+                    self.text_result.append(f"[WARN] profile failed for {p.name}: {e}")
+
+            self.plot_widget.set_title(f"Profiles: Sec {self.active_section_index + 1} (all selected images)")
+            self.plot_widget.plot_profiles(profiles_to_plot)
+            self.text_result.append(f"Plotted Sec {self.active_section_index + 1} for {ok_count}/{len(self.selected_images)} image(s)")
+            self._update_buttons()
+            return
+        
+        profiles_to_plot = []
+        ok_lines = 0
+
+        for p in self.selected_images:
+            try:
+                arr, _ = load_image(p)
+                arr_roi = apply_roi(arr, roi_obj)
+            except Exception as e:
+                self.text_result.append(f"[WARN] load failed for {p.name}: {e}")
+                continue
+
+            for idx, s in enumerate(self.cross_sections_payload, start=1):
+                try:
+                    sec = LineSection(
+                        x0=float(s["x0"]), y0=float(s["y0"]),
+                        x1=float(s["x1"]), y1=float(s["y1"]),
+                        samples=200
+                    )
+                    t, y = extract_line_profile(arr_roi, sec)
+                    profiles_to_plot.append((t.tolist(), y.tolist(), f"{p.stem} / Sec {idx}"))
+                    ok_lines += 1
+                except Exception as e:
+                    self.text_result.append(f"[WARN] profile failed for {p.name} sec {idx}: {e}")
+
+        self.plot_widget.set_title("Profiles: all sections (all selected images)")
+        self.plot_widget.plot_profiles(profiles_to_plot)
+        self.text_result.append(f"Plotted {ok_lines} profile(s) from {len(self.selected_images)} image(s)")
         self._update_buttons()
 
     def on_export_plot_png(self) -> None:
@@ -441,13 +518,10 @@ class MainWindow(QMainWindow):
             Path(file_path).parent.mkdir(parents=True, exist_ok=True)
             self.plot_widget.save_png(file_path, dpi=200)
             self.text_result.append(f"Saved plot: {file_path}")
-            #check 2
             self.last_saved_plot_path = Path(file_path)
 
         except Exception as e:
             QMessageBox.critical(self, "Export error", str(e))
-
-    # --------- Trend plot ----------
 
     def _update_trend_controls(self) -> None:
         has_results = len(self.last_results) > 0
@@ -456,7 +530,6 @@ class MainWindow(QMainWindow):
         self.btn_plot_trend.setEnabled(has_results and self.combo_x.count() > 0 and self.combo_y.count() > 0)
 
     def _populate_trend_dropdowns(self) -> None:
-        # collect param keys and metric keys from results (ignore errored)
         ok = [r for r in self.last_results if isinstance(r, dict) and "error" not in r]
 
         param_keys = set()
@@ -466,7 +539,6 @@ class MainWindow(QMainWindow):
             if isinstance(params, dict):
                 param_keys.update([k for k, v in params.items() if isinstance(v, (int, float))])
 
-            # metrics: numeric top-level keys (excluding known non-metrics)
             for k, v in r.items():
                 if k in ("filename", "path", "color_mode", "roi", "params", "summary", "profiles"):
                     continue
@@ -528,7 +600,6 @@ class MainWindow(QMainWindow):
         self.text_result.append(f"Trend plotted: {yk} vs {xk} ({len(points)} points)")
         self._update_buttons()
 
-    # ---------- run batch ----------
 
     def on_run(self) -> None:
         if not self.selected_images:
@@ -567,7 +638,6 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.on_error)
 
-        # cleanup on finished
         self.worker.finished.connect(self.thread.quit)
         self.worker.error.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
@@ -577,7 +647,6 @@ class MainWindow(QMainWindow):
         self.thread.start()
 
     def on_results_ready(self, results_obj) -> None:
-        # results_obj should be list[dict]
         if isinstance(results_obj, list):
             self.last_results = results_obj
         else:
@@ -606,14 +675,13 @@ class MainWindow(QMainWindow):
         self.btn_run.setEnabled(True)
         self._update_trend_controls()
 
-    # ---------- misc ----------
-
     def _update_buttons(self) -> None:
         self.btn_clear_roi.setEnabled(bool(self.roi_payload))
 
         has_sections = len(self.cross_sections_payload) > 0
         self.btn_clear_cs.setEnabled(has_sections)
         self.btn_plot_profiles.setEnabled(self.active_image is not None and has_sections)
+        self.btn_plot_profiles_all.setEnabled(bool(self.selected_images) and has_sections)
         self.btn_export_plot.setEnabled(self.plot_widget.has_content())
 
         self.btn_remove_section.setEnabled(self.list_sections.currentRow() >= 0)
@@ -665,3 +733,20 @@ class MainWindow(QMainWindow):
             self.text_result.append(f"PDF exported: {pdf_path}")
         except Exception as e:
             QMessageBox.critical(self, "PDF export error", str(e))
+
+    # X D 
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_F11:
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
+            event.accept()
+            return
+
+        if event.key() == Qt.Key.Key_Escape and self.isFullScreen():
+            self.showNormal()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)

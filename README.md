@@ -126,6 +126,54 @@ PDD-team3/
 
 ---
 
+
+## Structure v2
+
+```
+├── app
+│   ├── __init__.py
+│   ├── main.py
+│   ├── worker.py
+│   ├── controllers
+│   │   └── app_controller.py
+│   ├── models
+│   │   ├── analysis_config.py
+│   │   └── dataset.py
+│   └── ui
+│       ├── __init__.py
+│       ├── image_viewer.py
+│       ├── main_window.py
+│       └── plot_widget.py
+├── core
+│   ├── algorithms.py
+│   ├── params.py
+│   ├── profiles.py
+│   ├── roi.py
+│   ├── worker_tasks.py
+│   ├── analysis
+│   │   ├── __init__.py
+│   │   ├── batch_runner.py
+│   │   ├── contrast_metrics.py
+│   │   └── intensity_metrics.py
+│   ├── export
+│   │   ├── __init__.py
+│   │   ├── csv_exporter.py
+│   │   ├── pdf_report.py
+│   │   ├── profile_exporter.py
+│   │   └── txt_exporter.py
+│   └── io
+│       ├── image_loader.py
+│       └── filename_parser.py
+├── results
+├── test_photos
+├── lasery_dokumentacja.pdf
+├── requirements.txt
+├── README.md
+└── venv
+```
+
+---
+
 ## Notes
 
 - The virtual environment is local to the repository.
