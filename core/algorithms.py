@@ -83,6 +83,14 @@ def run_algorithm_on_path(
 
     if algorithm == ALGO_INTENSITY:
         metrics = compute_intensity_metrics_array(arr_roi)
+
+        n_px = int(metrics.get("N_px", 0))
+        d_px = float(metrics.get("D_px", 0.0))
+        mean_px = float(metrics.get("mean_px", 0.0))
+
+        metrics["N"] = float(n_px)
+        metrics["D"] = float(d_px)
+        metrics["PR"] = float(mean_px)
         return {
             "filename": image_path.name,
             "path": str(image_path),
@@ -90,8 +98,10 @@ def run_algorithm_on_path(
             "roi": roi_info,
             "params": params,
             **metrics,
-            "summary": f"PR={metrics['PR']:.4f}, N={metrics['N']:.2f}, D={metrics['D']:.2f}",
+            "summary": f"mean_px={mean_px:.4f}, N_px={n_px}, D_px={d_px:.2f}",
         }
+
+
 
     if algorithm == ALGO_CONTRAST:
         if arr_roi.ndim == 3:
