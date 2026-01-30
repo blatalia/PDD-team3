@@ -24,4 +24,4 @@ def process_one_image_task(
             profile_samples=profile_samples,
         )
     except Exception as e:
-        return {"filename": p.name, "path": str(p), "error": str(e)}
+        return {"filename": p.name, "path": str(p), "error": f"{type(e).__name__}: {e!r}"}

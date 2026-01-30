@@ -83,14 +83,21 @@ def run_algorithm_on_path(
 
     if algorithm == ALGO_INTENSITY:
         metrics = compute_intensity_metrics_array(arr_roi)
+
+        N = metrics.get("N", metrics.get("n", 0.0))
+        D = metrics.get("D", metrics.get("d", 0.0))
+        PR = metrics.get("PR", metrics.get("pr", 0.0))
+
         return {
             "filename": image_path.name,
             "path": str(image_path),
             "color_mode": color_mode,
             "roi": roi_info,
             "params": params,
-            **metrics,
-            "summary": f"PR={metrics['PR']:.4f}, N={metrics['N']:.2f}, D={metrics['D']:.2f}",
+            "N": float(N),
+            "D": float(D),
+            "PR": float(PR),
+            "summary": f"PR={PR:.4f}, N={N:.2f}, D={D:.2f}",
         }
 
     if algorithm == ALGO_CONTRAST:
