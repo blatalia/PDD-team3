@@ -22,16 +22,20 @@ def compute_intensity_metrics_array(arr: np.ndarray) -> dict:
     pixels = arr_gray[valid]
 
     if pixels.size == 0:
-        return {
-            "D_px": 0.0,
-            "N_px": 0,
-            "mean_px": 0.0,
-            "PR": 0.0,
-        }
-
+        pixels = arr_gray.ravel()
+        # TO DO FIX ME
+        # return {
+        #     "D_px": 0.0,
+        #     "N_px": 0,
+        #     "mean_px": 0.0,
+        #     "PR": 0.0,
+        # }
+    print("PIXELS")
+    print(pixels)
     D_px = float(pixels.sum())
     N_px = int(pixels.size)
     mean_px = float(D_px / N_px)
+    print(D_px)
 
     return {
         "D_px": D_px,
